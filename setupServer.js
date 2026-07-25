@@ -186,9 +186,38 @@ module.exports = async function setupServer(guild) {
             { id: memberRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
         ]
     });
-    await createChan('📜・regulament-general', ChannelType.GuildText, catImportante.id, [
-        { id: everyoneRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
-    ]);
+    const regulamentChannel = await guild.channels.create({
+        name: '📜・regulament-general',
+        type: ChannelType.GuildText,
+        parent: catImportante.id,
+        permissionOverwrites: [
+            { id: everyoneRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
+        ]
+    });
+    
+    // POSTAM REGULAMENTUL DIRECT
+    const { EmbedBuilder } = require('discord.js');
+    const embedRules = new EmbedBuilder()
+        .setColor('#e74c3c')
+        .setTitle('📜 Regulament General - Simple4Good')
+        .setDescription('Bine ai venit pe Simple4Good! Pentru a păstra un mediu plăcut și corect, te rugăm să respecți cu strictețe următoarele reguli:')
+        .addFields(
+            { name: '🎭 1.1 Roleplay (RP)', value: 'Reprezintă simularea vieții reale în joc, adică totalitatea acțiunilor pe care un om le-ar face în viața reală.' },
+            { name: '👤 1.2 In-Character (IC)', value: 'Reprezintă acel moment când simulezi viața reală prin intermediul caracterului tău în joc, de la acțiuni și decizii, până la conversații și sentimente.' },
+            { name: '⚔️ 1.3 Deathmatch (DM)', value: 'Reprezintă când 2 sau mai mulți jucători au început să se împuște/bată ca și cum ar fi într-un joc fără un scop Roleplay.' },
+            { name: '🤬 1.4 Suferințe OOC', value: 'Folosirea unui limbaj vulgar pe chat In-Game/Discord/Live-uri/PM-uri este strict interzisă.' },
+            { name: '🎉 1.5 Despre evenimente', value: 'Orice adunare unde se strânge o masă de oameni (petrecere, protest, car meeting, competiție, etc) este considerată un eveniment, iar deranjarea lui sau influențarea lui negativă este interzisă.' },
+            { name: '⚙️ 1.6 Altele (Comenzi & Limite)', value: 'Este interzis abuzul de /carry, /th, cătușe. De asemenea, limita la jafuri/bănci trebuie respectată conform regulilor IC curente.' }
+        )
+        .setFooter({ text: 'Sistem Oficial S4G' })
+        .setTimestamp();
+
+    await regulamentChannel.send({
+        content: '||@everyone||',
+        embeds: [embedRules]
+    });
+    await delay(100);
+
     await createChan('🔨・sanctiuni', ChannelType.GuildText, catImportante.id);
     await createChan('📢・anunturi-importante', ChannelType.GuildText, catImportante.id);
     await createChan('👀・sneak-peak', ChannelType.GuildText, catImportante.id);
@@ -202,11 +231,15 @@ module.exports = async function setupServer(guild) {
             { id: polRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
         ]
     });
-    await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderPol.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('📜・regulament-politie', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('⚖️・cod-penal', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('👮・reclamatii-politie', ChannelType.GuildText, catPolitie.id);
-    await createChan('📢・anunturi-politie', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderPol.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
+    const viewOnlyMember = { id: memberRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] };
+    const writeMember = { id: memberRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] };
+
+    await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderPol.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('📜・regulament-politie', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('⚖️・cod-penal', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('📝・aplicatii-politie', ChannelType.GuildText, catPolitie.id, [writeMember]);
+    await createChan('👮・reclamatii-politie', ChannelType.GuildText, catPolitie.id, [writeMember]);
+    await createChan('📢・anunturi-politie', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderPol.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
 
     console.log("Creare Categoria MEDICI...");
     const catMedici = await guild.channels.create({
@@ -216,10 +249,11 @@ module.exports = async function setupServer(guild) {
             { id: medRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
         ]
     });
-    await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMed.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('📜・regulament-medici', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('👨‍⚕️・reclamatii-medici', ChannelType.GuildText, catMedici.id);
-    await createChan('📢・anunturi-medici', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMed.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
+    await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMed.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('📜・regulament-medici', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('📝・aplicatii-medici', ChannelType.GuildText, catMedici.id, [writeMember]);
+    await createChan('👨‍⚕️・reclamatii-medici', ChannelType.GuildText, catMedici.id, [writeMember]);
+    await createChan('📢・anunturi-medici', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMed.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
 
     console.log("Creare Categoria MECANICI...");
     const catMecanici = await guild.channels.create({
@@ -229,10 +263,11 @@ module.exports = async function setupServer(guild) {
             { id: mecRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
         ]
     });
-    await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMec.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('📜・regulament-mecanici', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
-    await createChan('👨‍🔧・reclamatii-mecanici', ChannelType.GuildText, catMecanici.id);
-    await createChan('📢・anunturi-mecanici', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMec.id, allow: [PermissionsBitField.Flags.SendMessages] }]);
+    await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMec.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('📜・regulament-mecanici', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+    await createChan('📝・aplicatii-mecanici', ChannelType.GuildText, catMecanici.id, [writeMember]);
+    await createChan('👨‍🔧・reclamatii-mecanici', ChannelType.GuildText, catMecanici.id, [writeMember]);
+    await createChan('📢・anunturi-mecanici', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMec.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
 
     console.log("Creare Categoria MAFII/GANG...");
     const catMafii = await guild.channels.create({
