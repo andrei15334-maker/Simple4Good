@@ -17,5 +17,6 @@ module.exports = {
         ticketSystem.init(client);
         statsChannels.init(client);
         modalsSystem.init(client);
+        require('../systems/aiResponder').init(client);
     }
 };

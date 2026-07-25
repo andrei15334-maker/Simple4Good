@@ -125,9 +125,16 @@ module.exports = async function setupServer(guild) {
 
     const createChan = async (name, type, parentId, overwrites = []) => {
         try {
-            await guild.channels.create({ name, type, parent: parentId, permissionOverwrites: overwrites });
+            if (overwrites.length > 0) {
+                const hasEveryone = overwrites.find(o => o.id === everyoneRole.id);
+                if (!hasEveryone) {
+                    overwrites.push({ id: everyoneRole.id, deny: [PermissionsBitField.Flags.ViewChannel] });
+                }
+            }
+            const ch = await guild.channels.create({ name, type, parent: parentId, permissionOverwrites: overwrites });
             await delay(100);
-        } catch(e) { console.log("Failed channel", name); }
+            return ch;
+        } catch(e) { console.log("Failed channel", name); return null; }
     };
 
     console.log("Creare Categoria BUN VENIT (Verificare)...");
@@ -137,8 +144,8 @@ module.exports = async function setupServer(guild) {
             { id: everyoneRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
         ]
     });
-    // Acest canal va avea butonul permanent de verificare (postat ulterior de o comanda a botului)
-    await createChan('✅・verificare', ChannelType.GuildText, catWelcome.id);
+    // Acest canal va avea butonul permanent de verificare (postat ulterior)
+    const verifyChannelObj = await createChan('✅・verificare', ChannelType.GuildText, catWelcome.id);
 
     console.log("Creare Categoria STAFF...");
     const catStaff = await guild.channels.create({
@@ -172,6 +179,7 @@ module.exports = async function setupServer(guild) {
     });
     await createChan('💬・chat-general', ChannelType.GuildText, catGeneral.id);
     await createChan('📢・anunturi', ChannelType.GuildText, catGeneral.id);
+    await createChan('🤖・intrebari-ai', ChannelType.GuildText, catGeneral.id, [{ id: everyoneRole.id, deny: [PermissionsBitField.Flags.ViewChannel] }, { id: memberRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }]);
     await createChan('📸・poze', ChannelType.GuildText, catGeneral.id);
     await createChan('🔴・anunturi-live', ChannelType.GuildText, catGeneral.id);
     await createChan('🔊・Voice 1', ChannelType.GuildVoice, catGeneral.id);
@@ -220,6 +228,24 @@ module.exports = async function setupServer(guild) {
     await regulamentChannel.send({ content: '||@everyone||', embeds: [embed1, embed2, embed3] });
     await regulamentChannel.send({ embeds: [embed4] });
     await regulamentChannel.send({ embeds: [verifyEmbed], components: [rowVerify] });
+    
+    // Mesajul de redirect in canalul de verificare
+    if (verifyChannelObj) {
+        const embedV = new EmbedBuilder()
+            .setColor('#3498db')
+            .setTitle('👋 Bun venit pe Simple4Good!')
+            .setDescription(`Pentru a primi acces la server, te rugăm să citești regulamentul.\n\nApasă pe butonul de mai jos pentru a fi redirecționat direct către regulament. Derulează până jos de tot și apasă pe butonul verde de Accept!`)
+            .setFooter({ text: 'S4G Security' });
+
+        const rowV = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setLabel('📖 Citește Regulamentul')
+                .setStyle(ButtonStyle.Link)
+                .setURL(`https://discord.com/channels/${guild.id}/${regulamentChannel.id}`)
+        );
+        await verifyChannelObj.send({ embeds: [embedV], components: [rowV] });
+    }
+
     await delay(100);
 
     await createChan('🔨・sanctiuni', ChannelType.GuildText, catImportante.id);
