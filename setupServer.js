@@ -195,27 +195,31 @@ module.exports = async function setupServer(guild) {
         ]
     });
     
-    // POSTAM REGULAMENTUL DIRECT
-    const { EmbedBuilder } = require('discord.js');
-    const embedRules = new EmbedBuilder()
-        .setColor('#e74c3c')
-        .setTitle('📜 Regulament General - Simple4Good')
-        .setDescription('Bine ai venit pe Simple4Good! Pentru a păstra un mediu plăcut și corect, te rugăm să respecți cu strictețe următoarele reguli:')
-        .addFields(
-            { name: '🎭 1.1 Roleplay (RP)', value: 'Reprezintă simularea vieții reale în joc, adică totalitatea acțiunilor pe care un om le-ar face în viața reală.' },
-            { name: '👤 1.2 In-Character (IC)', value: 'Reprezintă acel moment când simulezi viața reală prin intermediul caracterului tău în joc, de la acțiuni și decizii, până la conversații și sentimente.' },
-            { name: '⚔️ 1.3 Deathmatch (DM)', value: 'Reprezintă când 2 sau mai mulți jucători au început să se împuște/bată ca și cum ar fi într-un joc fără un scop Roleplay.' },
-            { name: '🤬 1.4 Suferințe OOC', value: 'Folosirea unui limbaj vulgar pe chat In-Game/Discord/Live-uri/PM-uri este strict interzisă.' },
-            { name: '🎉 1.5 Despre evenimente', value: 'Orice adunare unde se strânge o masă de oameni (petrecere, protest, car meeting, competiție, etc) este considerată un eveniment, iar deranjarea lui sau influențarea lui negativă este interzisă.' },
-            { name: '⚙️ 1.6 Altele (Comenzi & Limite)', value: 'Este interzis abuzul de /carry, /th, cătușe. De asemenea, limita la jafuri/bănci trebuie respectată conform regulilor IC curente.' }
-        )
-        .setFooter({ text: 'Sistem Oficial S4G' })
-        .setTimestamp();
+    // REGULAMENTUL COMPLET SI BUTONUL DE VERIFICARE
+    const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
+    
+    const cap1 = `**1.1 Roleplay (RP)**\nReprezintă simularea vieții reale în joc...\n\n**1.2 In-Character (IC)**\nReprezintă acel moment când simulezi viața reală...\n\n**1.3 Deathmatch (DM)**\nReprezintă când 2 sau mai mulți jucători se bat...\n\n**1.4 Suferințe OOC**\nLimbajul vulgar este interzis.\n\n**1.5 Despre evenimente**\nDeranjarea evenimentelor este interzisă.\n\n**1.6 Altele**\nEste interzis abuzul de comenzi.`;
+    const cap2 = `**2.1 Fail Roleplay**\nReprezintă momentul în care nu reușești să te adaptezi...\n\n**2.2 No-Fear (NF)**\nCând nu simulezi frica.\n\n**2.3 Out Of Character (OOC)**\nIeșirea din caracter.\n\n**2.4 Power Gaming (PG)**\nFolosirea de puteri supranaturale.\n\n**2.5 Meta Gaming (MG)**\nInformații OOC folosite IC.\n\n**2.6 Condus Non-Roleplay**\nFără condus pe contrasens inutil.\n\n**2.7 RDM / 2.8 VDM / 2.9 NJ**\nFără deathmatch aiurea sau furt masini fara RP.`;
+    const cap3 = `**3.1 Deranjare Ticket**\nNu interveniți peste admini.\n\n**3.2 Fake Cop / Medic**\nInterzis.\n\n**3.3 AFK în Roleplay**\nInterzis.\n\n**3.4 Suferințe**\nInterzise IC și OOC.\n\n**3.5 Corupția**\nInterzisă la Poliție și SMURD.\n\n**3.8 Reguli Chat**\nDoar limba română.\n\n**3.9 Reguli Transfer**\nLimitele de zile pentru transfer.`;
+    const cap4 = `**4.1 Activități Ilegale & Răpiri**\n- La jafuri trebuie minim 2 persoane.\n- Minim 75 de ore jucate pentru ilegale.\n- Interzis mașini complet blindate la ilegale.\n\n**4.2 Alte Reguli**\n- Farming-ul de ore este interzis.\n- Mai multe persoane pe cont e interzis.\n\n• **Comunitatea își rezervă dreptul de a-și alege jucătorii.**`;
 
-    await regulamentChannel.send({
-        content: '||@everyone||',
-        embeds: [embedRules]
-    });
+    const embed1 = new EmbedBuilder().setColor('#f39c12').setTitle('Capitolul 1: Definiții Roleplay').setDescription(cap1);
+    const embed2 = new EmbedBuilder().setColor('#e74c3c').setTitle('Capitolul 2: Regulament și Sancțiuni').setDescription(cap2);
+    const embed3 = new EmbedBuilder().setColor('#9b59b6').setTitle('Capitolul 3: Regulament Facțiuni').setDescription(cap3);
+    const embed4 = new EmbedBuilder().setColor('#3498db').setTitle('Capitolul 4: Activități Ilegale & Diverse').setDescription(cap4);
+
+    const verifyEmbed = new EmbedBuilder()
+        .setColor('#2ecc71')
+        .setTitle('✅ Verificare Regulament')
+        .setDescription('Dacă ai citit tot regulamentul, apasă pe butonul de mai jos pentru a primi rolul de **Membru S4G** și a debloca restul serverului!');
+    
+    const rowVerify = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('btn_verify').setLabel('✅ Am citit și Accept').setStyle(ButtonStyle.Success)
+    );
+
+    await regulamentChannel.send({ content: '||@everyone||', embeds: [embed1, embed2, embed3] });
+    await regulamentChannel.send({ embeds: [embed4] });
+    await regulamentChannel.send({ embeds: [verifyEmbed], components: [rowVerify] });
     await delay(100);
 
     await createChan('🔨・sanctiuni', ChannelType.GuildText, catImportante.id);
@@ -288,7 +292,31 @@ module.exports = async function setupServer(guild) {
             { id: memberRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
         ]
     });
-    await createChan('📩・creaza-ticket', ChannelType.GuildText, catSupport.id);
+    const ticketChannel = await createChan('📩・creaza-ticket', ChannelType.GuildText, catSupport.id);
+    
+    // MENIUL DE TICKETE
+    if (ticketChannel) {
+        const embedT = new EmbedBuilder()
+            .setColor('#e67e22')
+            .setTitle('🎫 Sistem de Tickete - Simple4Good')
+            .setDescription('Selectează o categorie din meniul de mai jos pentru a deschide un ticket.\n\n⚠️ **Atenție:** Nu deschide tickete în bătaie de joc sau fără un motiv întemeiat, riști sancțiuni!')
+            .setFooter({ text: 'Support S4G' });
+
+        const menuT = new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('ticket_select')
+                .setPlaceholder('Alege motivul ticketului...')
+                .addOptions([
+                    { label: 'Reclamație Staff', description: 'Dacă un membru staff a abuzat.', value: 't_rec_staff', emoji: '🛡️' },
+                    { label: 'Reclamație Jucător', description: 'Raportează un jucător pentru încălcarea regulilor.', value: 't_rec_player', emoji: '👤' },
+                    { label: 'Donații', description: 'Dorești să donezi pentru server?', value: 't_donatie', emoji: '💎' },
+                    { label: 'Raportează Bug', description: 'Ai găsit un bug pe server?', value: 't_bug', emoji: '🐛' }
+                ])
+        );
+
+        await ticketChannel.send({ embeds: [embedT], components: [menuT] });
+    }
+
     await createChan('⏳・Asteptare Support', ChannelType.GuildVoice, catSupport.id, [{ id: memberRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect], deny: [PermissionsBitField.Flags.Speak] }]);
     for(let i=1; i<=5; i++) {
         await guild.channels.create({
