@@ -5,64 +5,67 @@ module.exports = {
 
     // Comenzile Slash / Setup initial pentru mesaje de creare (Invoiri)
     async init(client) {
-        // Pentru Invoiri si Demisii botul trimite butoane cand e pornit (daca nu exista)
-        const guild = client.guilds.cache.first();
-        if (!guild) return;
-
-        // --- INVOIRI ---
-        const invoireChan = guild.channels.cache.find(c => c.name.includes('cerere-invoire'));
-        if (invoireChan) {
-            const msgs = await invoireChan.messages.fetch({ limit: 5 });
-            const botMsg = msgs.find(m => m.author.id === client.user.id && m.components.length > 0);
-            if (!botMsg) {
-                const embed = new EmbedBuilder().setColor('#f39c12').setTitle('📝 Cereri Învoire Staff').setDescription('Apasă pe buton pentru a completa formularul de învoire.');
-                const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_invoire').setLabel('Creează Învoire').setStyle(ButtonStyle.Primary));
-                await invoireChan.send({ embeds: [embed], components: [row] });
+        // Parcurgem toate serverele pe care se afla botul (in caz ca e in mai multe)
+        for (const guild of client.guilds.cache.values()) {
+            // --- INVOIRI ---
+            const invoireChan = guild.channels.cache.find(c => c.name.includes('cerere-invoire'));
+            if (invoireChan) {
+                const msgs = await invoireChan.messages.fetch({ limit: 10 }).catch(() => null);
+                if (msgs) {
+                    const botMsg = msgs.find(m => m.author.id === client.user.id && m.components.length > 0);
+                    if (!botMsg) {
+                        const embed = new EmbedBuilder().setColor('#f39c12').setTitle('📝 Cereri Învoire Staff').setDescription('Apasă pe buton pentru a completa formularul de învoire.');
+                        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_invoire').setLabel('Creează Învoire').setStyle(ButtonStyle.Primary));
+                        await invoireChan.send({ embeds: [embed], components: [row] }).catch(() => {});
+                    }
+                }
             }
-        }
 
-        // --- DEMISII ---
-        const demisieChan = guild.channels.cache.find(c => c.name.includes('cerere-demisie'));
-        if (demisieChan) {
-            const msgs = await demisieChan.messages.fetch({ limit: 5 });
-            const botMsg = msgs.find(m => m.author.id === client.user.id && m.components.length > 0);
-            if (!botMsg) {
-                const embed = new EmbedBuilder().setColor('#e74c3c').setTitle('📝 Cereri Demisie Staff').setDescription('Apasă pe buton pentru a completa formularul de demisie.');
-                const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_demisie').setLabel('Creează Demisie').setStyle(ButtonStyle.Danger));
-                await demisieChan.send({ embeds: [embed], components: [row] });
+            // --- DEMISII ---
+            const demisieChan = guild.channels.cache.find(c => c.name.includes('cerere-demisie'));
+            if (demisieChan) {
+                const msgs = await demisieChan.messages.fetch({ limit: 10 }).catch(() => null);
+                if (msgs) {
+                    const botMsg = msgs.find(m => m.author.id === client.user.id && m.components.length > 0);
+                    if (!botMsg) {
+                        const embed = new EmbedBuilder().setColor('#e74c3c').setTitle('📝 Cereri Demisie Staff').setDescription('Apasă pe buton pentru a completa formularul de demisie.');
+                        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_demisie').setLabel('Creează Demisie').setStyle(ButtonStyle.Danger));
+                        await demisieChan.send({ embeds: [embed], components: [row] }).catch(() => {});
+                    }
+                }
             }
-        }
 
-        // --- APLICATII POLITIE ---
-        const polChan = guild.channels.cache.find(c => c.name.includes('aplicatii-politie'));
-        if (polChan) {
-            const msgs = await polChan.messages.fetch({ limit: 5 });
-            if (!msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
-                const embedPol = new EmbedBuilder().setColor('#0984e3').setTitle('👮 Aplicații Poliția Română').setDescription('Apasă pe butonul de mai jos pentru a trimite aplicația ta.');
-                const btnPol = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_politie').setLabel('Aplică la Poliție').setStyle(ButtonStyle.Primary));
-                await polChan.send({ embeds: [embedPol], components: [btnPol] });
+            // --- APLICATII POLITIE ---
+            const polChan = guild.channels.cache.find(c => c.name.includes('aplicatii-politie'));
+            if (polChan) {
+                const msgs = await polChan.messages.fetch({ limit: 10 }).catch(() => null);
+                if (msgs && !msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
+                    const embedPol = new EmbedBuilder().setColor('#0984e3').setTitle('👮 Aplicații Poliția Română').setDescription('Apasă pe butonul de mai jos pentru a trimite aplicația ta.');
+                    const btnPol = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_politie').setLabel('Aplică la Poliție').setStyle(ButtonStyle.Primary));
+                    await polChan.send({ embeds: [embedPol], components: [btnPol] }).catch(() => {});
+                }
             }
-        }
 
-        // --- APLICATII MEDICI ---
-        const medChan = guild.channels.cache.find(c => c.name.includes('aplicatii-medici'));
-        if (medChan) {
-            const msgs = await medChan.messages.fetch({ limit: 5 });
-            if (!msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
-                const embedMed = new EmbedBuilder().setColor('#d63031').setTitle('🚑 Aplicații SMURD').setDescription('Apasă pe butonul de mai jos pentru a aplica.');
-                const btnMed = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_medici').setLabel('Aplică la SMURD').setStyle(ButtonStyle.Danger));
-                await medChan.send({ embeds: [embedMed], components: [btnMed] });
+            // --- APLICATII MEDICI ---
+            const medChan = guild.channels.cache.find(c => c.name.includes('aplicatii-medici'));
+            if (medChan) {
+                const msgs = await medChan.messages.fetch({ limit: 10 }).catch(() => null);
+                if (msgs && !msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
+                    const embedMed = new EmbedBuilder().setColor('#d63031').setTitle('🚑 Aplicații SMURD').setDescription('Apasă pe butonul de mai jos pentru a aplica.');
+                    const btnMed = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_medici').setLabel('Aplică la SMURD').setStyle(ButtonStyle.Danger));
+                    await medChan.send({ embeds: [embedMed], components: [btnMed] }).catch(() => {});
+                }
             }
-        }
 
-        // --- APLICATII MECANICI ---
-        const mecChan = guild.channels.cache.find(c => c.name.includes('aplicatii-mecanici'));
-        if (mecChan) {
-            const msgs = await mecChan.messages.fetch({ limit: 5 });
-            if (!msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
-                const embedMec = new EmbedBuilder().setColor('#e17055').setTitle('🔧 Aplicații Mecanici').setDescription('Apasă pe buton pentru a aplica.');
-                const btnMec = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_mecanici').setLabel('Aplică la Mecanici').setStyle(ButtonStyle.Secondary));
-                await mecChan.send({ embeds: [embedMec], components: [btnMec] });
+            // --- APLICATII MECANICI ---
+            const mecChan = guild.channels.cache.find(c => c.name.includes('aplicatii-mecanici'));
+            if (mecChan) {
+                const msgs = await mecChan.messages.fetch({ limit: 10 }).catch(() => null);
+                if (msgs && !msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
+                    const embedMec = new EmbedBuilder().setColor('#e17055').setTitle('🔧 Aplicații Mecanici').setDescription('Apasă pe buton pentru a aplica.');
+                    const btnMec = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_mecanici').setLabel('Aplică la Mecanici').setStyle(ButtonStyle.Secondary));
+                    await mecChan.send({ embeds: [embedMec], components: [btnMec] }).catch(() => {});
+                }
             }
         }
     },
