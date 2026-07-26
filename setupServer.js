@@ -158,8 +158,8 @@ module.exports = async function setupServer(guild) {
     await createChan('📢・anunturi-staff', ChannelType.GuildText, catStaff.id);
     await createChan('💬・chat-staff', ChannelType.GuildText, catStaff.id);
     await createChan('🔨・sanctiuni-staff', ChannelType.GuildText, catStaff.id);
-    await createChan('📝・cerere-invoire', ChannelType.GuildText, catStaff.id);
-    await createChan('📝・cerere-demisie', ChannelType.GuildText, catStaff.id);
+    const invoireChannel = await createChan('📝・cerere-invoire', ChannelType.GuildText, catStaff.id);
+    const demisieChannel = await createChan('📝・cerere-demisie', ChannelType.GuildText, catStaff.id);
     await createChan('📝・logs-staff', ChannelType.GuildText, catStaff.id, [
         { id: everyoneRole.id, deny: [PermissionsBitField.Flags.ViewChannel] },
         { id: staffRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }
@@ -168,6 +168,24 @@ module.exports = async function setupServer(guild) {
     await createChan('🔊・Voce Staff 2', ChannelType.GuildVoice, catStaff.id);
     await createChan('🔊・Voce Staff 3', ChannelType.GuildVoice, catStaff.id);
     await createChan('🎙️・Sedinta Staff', ChannelType.GuildVoice, catStaff.id);
+
+    // Meniuri Invoire si Demisie Staff
+    if (invoireChannel) {
+        const embedInv = new EmbedBuilder()
+            .setColor('#f1c40f')
+            .setTitle('📅 Cerere de Învoire')
+            .setDescription('Dacă nu poți fi prezent la o ședință sau nu poți activa o perioadă, apasă pe butonul de mai jos pentru a trimite o cerere de învoire către High Staff.');
+        const btnInv = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_invoire').setLabel('Scrie Învoirea').setStyle(ButtonStyle.Primary));
+        await invoireChannel.send({ embeds: [embedInv], components: [btnInv] });
+    }
+    if (demisieChannel) {
+        const embedDem = new EmbedBuilder()
+            .setColor('#e74c3c')
+            .setTitle('📉 Cerere de Demisie')
+            .setDescription('Dacă dorești să renunți la funcția de Staff, apasă pe butonul de mai jos pentru a completa cererea de demisie.');
+        const btnDem = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_demisie').setLabel('Scrie Demisia').setStyle(ButtonStyle.Danger));
+        await demisieChannel.send({ embeds: [embedDem], components: [btnDem] });
+    }
 
     console.log("Creare Categoria GENERAL...");
     const catGeneral = await guild.channels.create({
@@ -267,9 +285,15 @@ module.exports = async function setupServer(guild) {
     await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderPol.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
     await createChan('📜・regulament-politie', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
     await createChan('⚖️・cod-penal', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
-    await createChan('📝・aplicatii-politie', ChannelType.GuildText, catPolitie.id, [writeMember]);
+    const aplicatiiPolitie = await createChan('📝・aplicatii-politie', ChannelType.GuildText, catPolitie.id, [writeMember]);
     await createChan('👮・reclamatii-politie', ChannelType.GuildText, catPolitie.id, [writeMember]);
     await createChan('📢・anunturi-politie', ChannelType.GuildText, catPolitie.id, [{ id: polRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderPol.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+
+    if (aplicatiiPolitie) {
+        const embedPol = new EmbedBuilder().setColor('#0984e3').setTitle('👮 Aplicații Poliția Română').setDescription('Apasă pe butonul de mai jos pentru a trimite aplicația ta. CV-ul va fi analizat de conducerea secției.');
+        const btnPol = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_politie').setLabel('Aplică la Poliție').setStyle(ButtonStyle.Primary));
+        await aplicatiiPolitie.send({ embeds: [embedPol], components: [btnPol] });
+    }
 
     console.log("Creare Categoria MEDICI...");
     const catMedici = await guild.channels.create({
@@ -281,9 +305,15 @@ module.exports = async function setupServer(guild) {
     });
     await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMed.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
     await createChan('📜・regulament-medici', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
-    await createChan('📝・aplicatii-medici', ChannelType.GuildText, catMedici.id, [writeMember]);
+    const aplicatiiMedici = await createChan('📝・aplicatii-medici', ChannelType.GuildText, catMedici.id, [writeMember]);
     await createChan('👨‍⚕️・reclamatii-medici', ChannelType.GuildText, catMedici.id, [writeMember]);
     await createChan('📢・anunturi-medici', ChannelType.GuildText, catMedici.id, [{ id: medRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMed.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+
+    if (aplicatiiMedici) {
+        const embedMed = new EmbedBuilder().setColor('#d63031').setTitle('🚑 Aplicații SMURD').setDescription('Apasă pe butonul de mai jos pentru a aplica în departamentul medical. Analizăm doar persoanele serioase!');
+        const btnMed = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_medici').setLabel('Aplică la SMURD').setStyle(ButtonStyle.Danger));
+        await aplicatiiMedici.send({ embeds: [embedMed], components: [btnMed] });
+    }
 
     console.log("Creare Categoria MECANICI...");
     const catMecanici = await guild.channels.create({
@@ -295,9 +325,15 @@ module.exports = async function setupServer(guild) {
     });
     await createChan('📰・comunicat-de-presa', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMec.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
     await createChan('📜・regulament-mecanici', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
-    await createChan('📝・aplicatii-mecanici', ChannelType.GuildText, catMecanici.id, [writeMember]);
+    const aplicatiiMecanici = await createChan('📝・aplicatii-mecanici', ChannelType.GuildText, catMecanici.id, [writeMember]);
     await createChan('👨‍🔧・reclamatii-mecanici', ChannelType.GuildText, catMecanici.id, [writeMember]);
     await createChan('📢・anunturi-mecanici', ChannelType.GuildText, catMecanici.id, [{ id: mecRole.id, deny: [PermissionsBitField.Flags.SendMessages] }, { id: liderMec.id, allow: [PermissionsBitField.Flags.SendMessages] }, viewOnlyMember]);
+
+    if (aplicatiiMecanici) {
+        const embedMec = new EmbedBuilder().setColor('#e17055').setTitle('🔧 Aplicații Mecanici').setDescription('Apasă pe buton pentru a aplica la service-ul auto.');
+        const btnMec = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_aplicatie_mecanici').setLabel('Aplică la Mecanici').setStyle(ButtonStyle.Secondary));
+        await aplicatiiMecanici.send({ embeds: [embedMec], components: [btnMec] });
+    }
 
     console.log("Creare Categoria MAFII/GANG...");
     const catMafii = await guild.channels.create({
