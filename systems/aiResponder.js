@@ -95,10 +95,10 @@ Reguli de comportament pentru tine:
                     .setFooter({ text: `Întrebare de la ${message.author.username}` })
                     .setTimestamp();
 
-                await message.reply({ embeds: [embed] });
+                await message.reply({ embeds: [embed] }).catch(() => {});
             } catch (error) {
                 console.error("Eroare la AI (Groq):", error);
-                await message.reply('A apărut o eroare la procesarea mesajului tău: `' + error.message + '`');
+                message.reply('A apărut o eroare la procesarea mesajului tău: `' + error.message + '`').catch(() => {});
             }
         });
     }
