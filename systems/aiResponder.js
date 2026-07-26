@@ -18,10 +18,36 @@ module.exports = {
                 // Arata ca botul scrie
                 await message.channel.sendTyping();
 
-                const promptContext = `Ești Asistentul Virtual Oficial al comunității de FiveM / Discord Roleplay numită "Simple4Good" (S4G).
-Ești prietenos, respecți utilizatorii și le răspunzi scurt, clar și la obiect în limba română.
-Scopul tău este să-i ajuți cu întrebări legate de roleplay, reguli generale, sau comenzi pe server.
-Nu inventa linkuri dacă nu le cunoști. Întrebarea este:`;
+                const promptContext = `Ești Asistentul Virtual Inteligent al comunității de FiveM Roleplay numită "Simple4Good" (S4G).
+Reguli de răspuns:
+1. Răspunzi DOAR în limba română, cu un ton prietenos, respectuos și natural.
+2. Oferi răspunsuri scurte, clare și la obiect (maxim 3-4 propoziții). Nu scrie romane.
+3. Ești pe un server de Discord. Dacă jucătorul te salută, salută-l și tu și întreabă-l cu ce îl poți ajuta legat de server.
+4. Dacă ești întrebat despre regulament, amintește-i că găsește totul în canalul "regulament-general".
+5. Nu inventa comenzi sau link-uri false.
+Fii creativ, dar menține-te în rolul tău de asistent S4G!`;
+
+                // Extragem ultimele 15 mesaje din canal pentru a crea memorie (context)
+                const fetchedMessages = await message.channel.messages.fetch({ limit: 12 });
+                const conversationHistory = [];
+                
+                // Parcurgem mesajele invers (de la cel mai vechi la cel mai nou)
+                fetchedMessages.reverse().forEach(msg => {
+                    if (msg.author.id === client.user.id) {
+                        // Mesajele botului (AI-ului)
+                        if (msg.embeds.length > 0 && msg.embeds[0].description) {
+                            conversationHistory.push({ role: 'assistant', content: msg.embeds[0].description });
+                        }
+                    } else if (!msg.author.bot && msg.content) {
+                        // Mesajele utilizatorilor
+                        conversationHistory.push({ role: 'user', content: msg.content });
+                    }
+                });
+
+                // Daca din vreo eroare mesajul curent nu a fost prins in fetch, il adaugam fortat
+                if (!conversationHistory.some(m => m.content === message.content && m.role === 'user')) {
+                    conversationHistory.push({ role: 'user', content: message.content });
+                }
 
                 const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
@@ -33,7 +59,7 @@ Nu inventa linkuri dacă nu le cunoști. Întrebarea este:`;
                         model: 'llama-3.1-8b-instant',
                         messages: [
                             { role: 'system', content: promptContext },
-                            { role: 'user', content: message.content }
+                            ...conversationHistory
                         ],
                         temperature: 0.7,
                         max_tokens: 1000
