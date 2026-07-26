@@ -43,7 +43,7 @@ Nu inventa linkuri dacă nu le cunoști.
                 await message.reply({ embeds: [embed] });
             } catch (error) {
                 console.error("Eroare la AI:", error);
-                await message.reply('A apărut o eroare la procesarea mesajului tău.');
+                await message.reply('A apărut o eroare la procesarea mesajului tău: `' + error.message + '`');
             }
         });
     }
