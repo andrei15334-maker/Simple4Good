@@ -10,19 +10,19 @@ module.exports = {
         if (!guild) return;
 
         // --- INVOIRI ---
-        const invoireChan = guild.channels.cache.find(c => c.name === '📝・cerere-invoire');
+        const invoireChan = guild.channels.cache.find(c => c.name.includes('cerere-invoire'));
         if (invoireChan) {
             const msgs = await invoireChan.messages.fetch({ limit: 5 });
             const botMsg = msgs.find(m => m.author.id === client.user.id && m.components.length > 0);
             if (!botMsg) {
                 const embed = new EmbedBuilder().setColor('#f39c12').setTitle('📝 Cereri Învoire Staff').setDescription('Apasă pe buton pentru a completa formularul de învoire.');
-                const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_creeaza_invoire').setLabel('Creează Învoire').setStyle(ButtonStyle.Primary));
+                const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_invoire').setLabel('Creează Învoire').setStyle(ButtonStyle.Primary));
                 await invoireChan.send({ embeds: [embed], components: [row] });
             }
         }
 
         // --- DEMISII ---
-        const demisieChan = guild.channels.cache.find(c => c.name === '📝・cerere-demisie');
+        const demisieChan = guild.channels.cache.find(c => c.name.includes('cerere-demisie'));
         if (demisieChan) {
             const msgs = await demisieChan.messages.fetch({ limit: 5 });
             const botMsg = msgs.find(m => m.author.id === client.user.id && m.components.length > 0);
@@ -34,7 +34,7 @@ module.exports = {
         }
 
         // --- APLICATII POLITIE ---
-        const polChan = guild.channels.cache.find(c => c.name === '📝・aplicatii-politie');
+        const polChan = guild.channels.cache.find(c => c.name.includes('aplicatii-politie'));
         if (polChan) {
             const msgs = await polChan.messages.fetch({ limit: 5 });
             if (!msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
@@ -45,7 +45,7 @@ module.exports = {
         }
 
         // --- APLICATII MEDICI ---
-        const medChan = guild.channels.cache.find(c => c.name === '📝・aplicatii-medici');
+        const medChan = guild.channels.cache.find(c => c.name.includes('aplicatii-medici'));
         if (medChan) {
             const msgs = await medChan.messages.fetch({ limit: 5 });
             if (!msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
@@ -56,7 +56,7 @@ module.exports = {
         }
 
         // --- APLICATII MECANICI ---
-        const mecChan = guild.channels.cache.find(c => c.name === '📝・aplicatii-mecanici');
+        const mecChan = guild.channels.cache.find(c => c.name.includes('aplicatii-mecanici'));
         if (mecChan) {
             const msgs = await mecChan.messages.fetch({ limit: 5 });
             if (!msgs.find(m => m.author.id === client.user.id && m.components.length > 0)) {
