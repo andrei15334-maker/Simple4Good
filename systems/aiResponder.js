@@ -43,7 +43,18 @@ Nu inventa linkuri dacă nu le cunoști.
                 await message.reply({ embeds: [embed] });
             } catch (error) {
                 console.error("Eroare la AI:", error);
-                await message.reply('A apărut o eroare la procesarea mesajului tău: `' + error.message + '`');
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+                    const data = await res.json();
+                    if (data.models) {
+                        const models = data.models.map(m => m.name.replace('models/', '')).join(', ');
+                        await message.reply('Eroare: Modelul nu e găsit! Modele disponibile pentru cheia ta: `' + models.substring(0, 1500) + '`');
+                    } else {
+                        await message.reply('Eroare listare modele: ' + JSON.stringify(data));
+                    }
+                } catch(e) {
+                    await message.reply('A apărut o eroare la procesarea mesajului tău: `' + error.message + '`');
+                }
             }
         });
     }
