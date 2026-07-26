@@ -43,6 +43,18 @@ module.exports = {
             }
         }
 
+        // Fix Butoane Command (Spawneaza butoanele lipsa)
+        if (message.content === '!fix_butoane') {
+            if (!message.member.permissions.has('Administrator')) return;
+            try {
+                await modalsSystem.init(client);
+                await message.reply('✅ Am forțat botul să verifice și să pună butoanele lipsă pe canale!');
+            } catch (e) {
+                console.error(e);
+                await message.reply('Eroare la generarea butoanelor.');
+            }
+        }
+
         // Clear Command
         if (message.content.startsWith('!clear')) {
             if (!message.member.permissions.has('ManageMessages')) {
