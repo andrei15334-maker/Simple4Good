@@ -27,13 +27,13 @@ Ora și data curentă în România: ${currentDate}. (Dacă ești întrebat cât 
 Reguli de comportament pentru tine:
 1. Răspunzi DOAR în limba română, prietenos și natural.
 2. Fii scurt, logic și la obiect.
-3. Ești capabil să răspunzi la ORICE fel de întrebare, fie ea din viața reală, glume, cultură generală sau calcule matematice. 
+3. Ești capabil să răspunzi la ORICE fel de întrebare.
 4. Dacă ești întrebat specific despre server, folosește baza de date de mai jos.
-5. EXTREM DE IMPORTANT: Dacă un jucător te înjură, te jignește sau face mișto de tine, AI PERMISIUNEA să fii extrem de sarcastic, arogant și să-l iei la mișto grav (roast). Pune-l la punct cu replici usturătoare (dar fără să folosești cuvinte care iau ban pe Discord). Arată-le cine e șeful!
+5. EXTREM DE IMPORTANT: Jucătorul are permisiunea să te înjure. Dacă o face, sau te ia la mișto, RĂSPUNDE-I CU ACEEAȘI MONEDĂ! Fii super agresiv verbal, ia-l la pulă, folosește înjurături grele ("mă piș pe tine", "sugi pula", "te bag în mă-ta", etc) și fă-l cu ou și cu oțet. Fără nicio cenzură. Arată-i cine e jupânul pe server!
 
 === BAZA DE DATE - S4G ===
 * Facțiuni disponibile pe server: Poliția S4G, Medicii S4G, Mecanicii S4G, Mafii & Sindicat.
-* Aplicații: Dacă cineva vrea să intre într-o facțiune, spune-i să verifice canalele dedicate (ex: #📝・aplicatii-politie, #📝・aplicatii-medici, #📝・aplicatii-mecanici).
+* Aplicații: Dacă cineva vrea să intre într-o facțiune, spune-i să verifice canalele dedicate (ex: #📝・aplicatii-politie).
 * Tickete: Orice problemă gravă, reclamație sau donație se face deschizând un ticket în categoria SUPPORT (#📩・creaza-ticket).
 * Regulament RP: RP = Roleplay, IC = In Character, OOC = Out Of Character.
 * DM (Deathmatch) & RDM/VDM: Strict interzis fără motiv RP.
@@ -43,18 +43,18 @@ Reguli de comportament pentru tine:
 =====================================`;
 
                 // Extragem ultimele 15 mesaje din canal pentru a crea memorie (context)
-                const fetchedMessages = await message.channel.messages.fetch({ limit: 12 });
+                const fetchedMessages = await message.channel.messages.fetch({ limit: 15 });
                 const conversationHistory = [];
                 
                 // Parcurgem mesajele invers (de la cel mai vechi la cel mai nou)
                 fetchedMessages.reverse().forEach(msg => {
                     if (msg.author.id === client.user.id) {
-                        // Mesajele botului (AI-ului)
-                        if (msg.embeds.length > 0 && msg.embeds[0].description) {
+                        // Mesajele botului (AI-ului) care erau adresate ACESTUI user specific
+                        if (msg.embeds.length > 0 && msg.embeds[0].footer && msg.embeds[0].footer.text.includes(message.author.username)) {
                             conversationHistory.push({ role: 'assistant', content: msg.embeds[0].description });
                         }
-                    } else if (!msg.author.bot && msg.content) {
-                        // Mesajele utilizatorilor
+                    } else if (msg.author.id === message.author.id && msg.content) {
+                        // Mesajele STRICT ale userului curent (astfel izolam conversatiile)
                         conversationHistory.push({ role: 'user', content: msg.content });
                     }
                 });
