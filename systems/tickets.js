@@ -40,13 +40,13 @@ module.exports = {
     },
 
     async handleInteraction(interaction) {
-        if (interaction.isStringSelectMenu() && interaction.customId === 'select_ticket_reason') {
+        if (interaction.isStringSelectMenu() && (interaction.customId === 'select_ticket_reason' || interaction.customId === 'ticket_select')) {
             try {
                 await interaction.deferReply({ ephemeral: true });
 
                 const motiv = interaction.values[0];
                 
-                let ticketCat = interaction.guild.channels.cache.find(c => c.name === '📩 ┃ TICKETE' && c.type === ChannelType.GuildCategory);
+                let ticketCat = interaction.guild.channels.cache.find(c => (c.name.includes('TICKETE') || c.name.includes('tickete')) && c.type === ChannelType.GuildCategory);
                 if (!ticketCat) {
                     ticketCat = await interaction.guild.channels.create({ name: '📩 ┃ TICKETE', type: ChannelType.GuildCategory }).catch(() => null);
                 }
@@ -56,10 +56,10 @@ module.exports = {
                 }
 
                 let topicName = "Support";
-                if (motiv === 'ticket_reclamatie_staff') topicName = "Reclamatie Staff";
-                if (motiv === 'ticket_reclamatie_player') topicName = "Reclamatie Player";
-                if (motiv === 'ticket_donatii') topicName = "Donatii";
-                if (motiv === 'ticket_buguri') topicName = "Bug";
+                if (motiv === 'ticket_reclamatie_staff' || motiv === 't_rec_staff') topicName = "Reclamație Staff";
+                if (motiv === 'ticket_reclamatie_player' || motiv === 't_rec_player') topicName = "Reclamație Jucător";
+                if (motiv === 'ticket_donatii' || motiv === 't_donatie') topicName = "Donații";
+                if (motiv === 'ticket_buguri' || motiv === 't_bug') topicName = "Raportare Bug";
 
                 const channelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
                 const newTicket = await interaction.guild.channels.create({
