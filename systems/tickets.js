@@ -224,7 +224,7 @@ module.exports = {
             const staffMention = staffRole ? `<@&${staffRole.id}>` : '@🔰 Staff Member';
 
             await message.channel.send({
-                content: `🔔 ${staffMention} — Utilizatorul <@${message.author.id}> a completat modelul de **${categoryName}**!\nUn membru din echipa staff îți va răspunde în cel mai scurt timp.`
+                content: `✨ Îți mulțumim <@${message.author.id}> pentru completarea modelului!\n🔔 Un ${staffMention} te va contacta în cel mai scurt timp pentru a te asista!`
             }).catch(() => {});
         }
     }
