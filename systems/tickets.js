@@ -41,42 +41,57 @@ module.exports = {
 
     async handleInteraction(interaction) {
         if (interaction.isStringSelectMenu() && interaction.customId === 'select_ticket_reason') {
-            const motiv = interaction.values[0];
-            
-            let ticketCat = interaction.guild.channels.cache.find(c => c.name === '📩 ┃ TICKETE' && c.type === ChannelType.GuildCategory);
-            if (!ticketCat) {
-                ticketCat = await interaction.guild.channels.create({ name: '📩 ┃ TICKETE', type: ChannelType.GuildCategory });
+            try {
+                await interaction.deferReply({ ephemeral: true });
+
+                const motiv = interaction.values[0];
+                
+                let ticketCat = interaction.guild.channels.cache.find(c => c.name === '📩 ┃ TICKETE' && c.type === ChannelType.GuildCategory);
+                if (!ticketCat) {
+                    ticketCat = await interaction.guild.channels.create({ name: '📩 ┃ TICKETE', type: ChannelType.GuildCategory }).catch(() => null);
+                }
+
+                if (!ticketCat) {
+                    return interaction.editReply({ content: '❌ Eroare la crearea categoriei de tickete!' });
+                }
+
+                let topicName = "Support";
+                if (motiv === 'ticket_reclamatie_staff') topicName = "Reclamatie Staff";
+                if (motiv === 'ticket_reclamatie_player') topicName = "Reclamatie Player";
+                if (motiv === 'ticket_donatii') topicName = "Donatii";
+                if (motiv === 'ticket_buguri') topicName = "Bug";
+
+                const channelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                const newTicket = await interaction.guild.channels.create({
+                    name: channelName,
+                    type: ChannelType.GuildText,
+                    parent: ticketCat.id,
+                    permissionOverwrites: [
+                        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+                        { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] }
+                    ]
+                });
+
+                const embed = new EmbedBuilder()
+                    .setColor('#e67e22')
+                    .setTitle(`🎫 Ticket: ${topicName}`)
+                    .setDescription(`Salut <@${interaction.user.id}>! Un membru din staff va prelua ticketul tău în scurt timp.\nTe rugăm să detaliezi problema.`)
+                    .setTimestamp();
+
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('btn_close_ticket').setLabel('🔒 Închide Ticket').setStyle(ButtonStyle.Danger)
+                );
+
+                await newTicket.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [row] });
+                await interaction.editReply({ content: `✅ Ticketul tău a fost creat: <#${newTicket.id}>` });
+            } catch (err) {
+                console.error('[TICKET CREATE ERROR]', err);
+                if (interaction.deferred || interaction.replied) {
+                    await interaction.editReply({ content: '❌ Eroare la crearea canalului de ticket!' }).catch(() => {});
+                } else {
+                    await interaction.reply({ content: '❌ Eroare la crearea canalului de ticket!', ephemeral: true }).catch(() => {});
+                }
             }
-
-            let topicName = "Support";
-            if (motiv === 'ticket_reclamatie_staff') topicName = "Reclamatie Staff";
-            if (motiv === 'ticket_reclamatie_player') topicName = "Reclamatie Player";
-            if (motiv === 'ticket_donatii') topicName = "Donatii";
-            if (motiv === 'ticket_buguri') topicName = "Bug";
-
-            const channelName = `ticket-${interaction.user.username}`;
-            const newTicket = await interaction.guild.channels.create({
-                name: channelName,
-                type: ChannelType.GuildText,
-                parent: ticketCat.id,
-                permissionOverwrites: [
-                    { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-                    { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
-                ]
-            });
-
-            const embed = new EmbedBuilder()
-                .setColor('#e67e22')
-                .setTitle(`🎫 Ticket: ${topicName}`)
-                .setDescription(`Salut <@${interaction.user.id}>! Un membru din staff va prelua ticketul tău în scurt timp.\nTe rugăm să detaliezi problema.`)
-                .setTimestamp();
-
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('btn_close_ticket').setLabel('🔒 Închide Ticket').setStyle(ButtonStyle.Danger)
-            );
-
-            await newTicket.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [row] });
-            await interaction.reply({ content: `Ticketul tău a fost creat: <#${newTicket.id}>`, ephemeral: true });
         }
         
         else if (interaction.isButton()) {
