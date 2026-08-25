@@ -73,15 +73,6 @@ module.exports = {
                 }
 
                 const channelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                
-                // Fetch staff role for tag
-                const staffRole = interaction.guild.roles.cache.find(r => 
-                    r.name.toLowerCase().includes('staff member') || 
-                    r.name.toLowerCase().includes('staff') || 
-                    r.name.toLowerCase().includes('helper') ||
-                    r.name.toLowerCase().includes('administrator')
-                );
-                const staffMention = staffRole ? `<@&${staffRole.id}>` : '@Membru Staff';
 
                 const newTicket = await interaction.guild.channels.create({
                     name: channelName,
@@ -96,7 +87,7 @@ module.exports = {
                 const embed = new EmbedBuilder()
                     .setColor('#e67e22')
                     .setTitle(`🎫 Ticket: ${topicName}`)
-                    .setDescription(`Salut <@${interaction.user.id}>!\nÎți mulțumim pentru că ai deschis un tichet!\nUn ${staffMention} îți va răspunde cât de curând la tichet.\n\n⚠️ **TE RUGĂM SĂ TRIMITI DETALIILE COMPLETÂND MODELUL DE MAI JOS:**\n\n${modelText}\n*Copiază modelul de mai sus și trimite-l completat în acest canal!*`)
+                    .setDescription(`Salut <@${interaction.user.id}>!\nÎți mulțumim pentru că ai deschis un tichet!\n\n⚠️ **TE RUGĂM SĂ TRIMITI DETALIILE COMPLETÂND MODELUL DE MAI JOS:**\n\n${modelText}\n*Copiază modelul de mai sus și trimite-l completat în acest canal! După completare, echipa staff va fi notificată.*`)
                     .setFooter({ text: 'Support S4G' })
                     .setTimestamp();
 
@@ -104,7 +95,7 @@ module.exports = {
                     new ButtonBuilder().setCustomId('btn_close_ticket').setLabel('🔒 Închide Ticket').setStyle(ButtonStyle.Danger)
                 );
 
-                await newTicket.send({ content: `<@${interaction.user.id}> | ${staffMention}`, embeds: [embed], components: [row] });
+                await newTicket.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [row] });
                 await interaction.editReply({ content: `✅ Ticketul tău a fost creat: <#${newTicket.id}>` });
             } catch (err) {
                 console.error('[TICKET CREATE ERROR]', err);
@@ -127,9 +118,8 @@ module.exports = {
             if (interaction.customId === 'btn_confirm_close') {
                 await interaction.reply({ content: 'Se salvează arhiva ticketului, te rog așteaptă...', ephemeral: true });
                 try {
-                    // Preia mesajele (max 100 pentru istoric)
                     const fetched = await interaction.channel.messages.fetch({ limit: 100 });
-                    const messages = Array.from(fetched.values()).reverse(); // ordine cronologica
+                    const messages = Array.from(fetched.values()).reverse();
 
                     let transcript = `TRANSCRIPT TICKET: ${interaction.channel.name}\nData inchiderii: ${new Date().toLocaleString('ro-RO')}\n\n`;
                     messages.forEach(m => {
@@ -139,7 +129,6 @@ module.exports = {
                         if (m.attachments.size > 0) transcript += `  [Atașamente: ${m.attachments.map(a => a.url).join(', ')}]\n`;
                     });
 
-                    // Gasim sau cream canalul arhiva-tickete ascuns
                     let archiveChan = interaction.guild.channels.cache.find(c => c.name === '📁・arhiva-tickete');
                     if (!archiveChan) {
                         const adminRole = interaction.guild.roles.cache.find(r => r.name === '🛡️ Administrator');
@@ -147,13 +136,12 @@ module.exports = {
                             name: '📁・arhiva-tickete',
                             type: ChannelType.GuildText,
                             permissionOverwrites: [
-                                { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] }, // ascuns pt everyone
+                                { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
                                 ...(adminRole ? [{ id: adminRole.id, allow: [PermissionsBitField.Flags.ViewChannel], deny: [PermissionsBitField.Flags.SendMessages] }] : [])
                             ]
                         });
                     }
 
-                    // Fisierul de text
                     const attachment = new AttachmentBuilder(Buffer.from(transcript, 'utf-8'), { name: `${interaction.channel.name}-transcript.txt` });
 
                     await archiveChan.send({ 
@@ -161,7 +149,6 @@ module.exports = {
                         files: [attachment] 
                     });
 
-                    // La final stergem canalul de ticket
                     await interaction.channel.delete();
                 } catch (e) {
                     console.error("Eroare transcript:", e);
@@ -174,52 +161,70 @@ module.exports = {
         }
     },
 
-    // Handle ticket channel message validation
+    // Handle ticket channel message validation & staff tagging upon valid submission
     async handleMessage(message) {
         if (message.author.bot || !message.channel || !message.channel.name) return;
         if (!message.channel.name.startsWith('ticket-')) return;
 
-        // Skip validation if the sender is staff
-        const isStaff = message.member && message.member.roles.cache.some(r => 
-            r.name.toLowerCase().includes('staff') || 
-            r.name.toLowerCase().includes('admin') || 
-            r.name.toLowerCase().includes('helper') ||
-            r.name.toLowerCase().includes('fondator') ||
-            r.name.toLowerCase().includes('developer')
-        );
-        if (isStaff) return;
-
-        // Fetch first bot embed in channel to see what required model fields exist
-        const msgs = await message.channel.messages.fetch({ limit: 10 }).catch(() => null);
+        // Check if staff was ALREADY tagged in this ticket channel
+        const msgs = await message.channel.messages.fetch({ limit: 50 }).catch(() => null);
         if (!msgs) return;
-        
-        const botMsg = [...msgs.values()].find(m => m.author.id === message.client.user.id && m.embeds.length > 0);
-        if (!botMsg) return;
 
-        const embedDesc = botMsg.embeds[0].description || '';
+        const allMsgs = [...msgs.values()];
+        const alreadyTaggedStaff = allMsgs.some(m => m.content && (m.content.includes('a completat modelul de') || m.content.includes('Staff Member')));
+        if (alreadyTaggedStaff) return; // Staff already notified, allow normal chatting
+
+        // Find first embed to determine ticket category & model requirements
+        const botEmbedMsg = allMsgs.find(m => m.author.id === message.client.user.id && m.embeds.length > 0);
+        if (!botEmbedMsg) return;
+
+        const embedDesc = botEmbedMsg.embeds[0].description || '';
         const contentLower = message.content.toLowerCase();
 
-        // Check required fields based on category in embed description
-        let missing = [];
+        let isModelValid = false;
+        let categoryName = "Ticket";
+
         if (embedDesc.includes('Reclamație Staff')) {
-            if (!contentLower.includes('id fivem') && !contentLower.includes('id:')) missing.push('ID FiveM');
-            if (!contentLower.includes('reclamat') && !contentLower.includes('staff')) missing.push('Membrul Staff Reclamat');
-            if (!contentLower.includes('motiv')) missing.push('Motivul Reclamatiei');
+            categoryName = "Reclamație Staff";
+            const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
+            const hasReclamat = contentLower.includes('reclamat') || contentLower.includes('staff');
+            const hasMotiv = contentLower.includes('motiv');
+            const hasDovada = contentLower.includes('dovad');
+            isModelValid = hasId && hasReclamat && hasMotiv && hasDovada;
         } else if (embedDesc.includes('Reclamație Jucător')) {
-            if (!contentLower.includes('id fivem') && !contentLower.includes('id:')) missing.push('ID FiveM');
-            if (!contentLower.includes('reclamat') && !contentLower.includes('player')) missing.push('Playerul Reclamat');
-            if (!contentLower.includes('motiv')) missing.push('Motivul Reclamatiei');
+            categoryName = "Reclamație Jucător";
+            const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
+            const hasReclamat = contentLower.includes('reclamat') || contentLower.includes('player');
+            const hasMotiv = contentLower.includes('motiv');
+            const hasDovada = contentLower.includes('dovad');
+            isModelValid = hasId && hasReclamat && hasMotiv && hasDovada;
         } else if (embedDesc.includes('Donații')) {
-            if (!contentLower.includes('id fivem') && !contentLower.includes('id:')) missing.push('ID FiveM');
-            if (!contentLower.includes('achizition') && !contentLower.includes('doresti')) missing.push('Ce dorești să achiziționezi');
+            categoryName = "Donații";
+            const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
+            const hasAchizitie = contentLower.includes('achiziti') || contentLower.includes('dorest') || contentLower.includes('cumpar');
+            isModelValid = hasId && hasAchizitie;
         } else if (embedDesc.includes('Raportare Bug')) {
-            if (!contentLower.includes('id fivem') && !contentLower.includes('id:')) missing.push('ID FiveM');
-            if (!contentLower.includes('bug') && !contentLower.includes('problema')) missing.push('Problema/Bug-ul');
+            categoryName = "Raportare Bug";
+            const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
+            const hasBug = contentLower.includes('bug') || contentLower.includes('problem');
+            isModelValid = hasId && hasBug;
+        } else {
+            isModelValid = message.content.trim().length >= 10;
         }
 
-        if (missing.length > 0) {
-            await message.reply({ 
-                content: `⚠️ <@${message.author.id}>, modelul nu a fost completat corect!\n\n❌ Îți lipsesc următoarele informații cerute în model: **${missing.join(', ')}**.\n\nTe rugăm să copiezi modelul exact din mesajul de mai sus și să îl trimiți completat cu toate datele cerute!` 
+        if (!isModelValid) {
+            await message.reply({
+                content: `⚠️ <@${message.author.id}>, modelul nu a fost completat corect!\n\n❌ Mesajul tău nu conține câmpurile obligatorii din model (Nume, ID FiveM, Motiv, Dovadă etc.).\n\nTe rugăm să copiezi modelul exact din primul mesaj de mai sus și să îl trimiți completat cu toate datele!`
+            }).catch(() => {});
+        } else {
+            // Model is VALID! Tag @🔰 Staff Member now!
+            const staffRole = message.guild.roles.cache.find(r => r.name === '🔰 Staff Member') || 
+                              message.guild.roles.cache.find(r => r.name.toLowerCase().includes('staff member')) || 
+                              message.guild.roles.cache.find(r => r.name.toLowerCase() === 'staff member') || null;
+            const staffMention = staffRole ? `<@&${staffRole.id}>` : '@🔰 Staff Member';
+
+            await message.channel.send({
+                content: `🔔 ${staffMention} — Utilizatorul <@${message.author.id}> a completat modelul de **${categoryName}**!\nUn membru din echipa staff îți va răspunde în cel mai scurt timp.`
             }).catch(() => {});
         }
     }
