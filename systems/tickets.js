@@ -171,53 +171,60 @@ module.exports = {
         if (!msgs) return;
 
         const allMsgs = [...msgs.values()];
-        const alreadyTaggedStaff = allMsgs.some(m => m.content && (m.content.includes('a completat modelul de') || m.content.includes('Staff Member')));
+        const alreadyTaggedStaff = allMsgs.some(m => m.content && (m.content.includes('completarea modelului') || m.content.includes('Staff Member')));
         if (alreadyTaggedStaff) return; // Staff already notified, allow normal chatting
 
         // Find first embed to determine ticket category & model requirements
         const botEmbedMsg = allMsgs.find(m => m.author.id === message.client.user.id && m.embeds.length > 0);
         if (!botEmbedMsg) return;
 
+        const embedTitle = botEmbedMsg.embeds[0].title || '';
         const embedDesc = botEmbedMsg.embeds[0].description || '';
+        const fullHeader = (embedTitle + ' ' + embedDesc).toLowerCase();
         const contentLower = message.content.toLowerCase();
 
         let isModelValid = false;
         let categoryName = "Ticket";
+        let missingField = "";
 
-        if (embedDesc.includes('Reclamație Staff')) {
+        if (fullHeader.includes('reclamație staff') || fullHeader.includes('reclamatie staff')) {
             categoryName = "Reclamație Staff";
             const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
-            const hasReclamat = contentLower.includes('reclamat') || contentLower.includes('staff');
-            const hasMotiv = contentLower.includes('motiv');
-            const hasDovada = contentLower.includes('dovad');
+            const hasReclamat = contentLower.includes('membrul staff reclamat') || contentLower.includes('staff reclamat');
+            const hasMotiv = contentLower.includes('motivul reclamatiei') || contentLower.includes('motiv:');
+            const hasDovada = contentLower.includes('dovada') || contentLower.includes('dovadă');
             isModelValid = hasId && hasReclamat && hasMotiv && hasDovada;
-        } else if (embedDesc.includes('Reclamație Jucător')) {
+            if (!isModelValid) missingField = "Membrul Staff Reclamat, Motivul Reclamatiei, Dovada";
+        } else if (fullHeader.includes('reclamație jucător') || fullHeader.includes('reclamatie jucator') || fullHeader.includes('player')) {
             categoryName = "Reclamație Jucător";
             const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
-            const hasReclamat = contentLower.includes('reclamat') || contentLower.includes('player');
-            const hasMotiv = contentLower.includes('motiv');
-            const hasDovada = contentLower.includes('dovad');
+            const hasReclamat = contentLower.includes('playerul reclamat') || contentLower.includes('player reclamat');
+            const hasMotiv = contentLower.includes('motivul reclamatiei') || contentLower.includes('motiv:');
+            const hasDovada = contentLower.includes('dovada') || contentLower.includes('dovadă');
             isModelValid = hasId && hasReclamat && hasMotiv && hasDovada;
-        } else if (embedDesc.includes('Donații')) {
+            if (!isModelValid) missingField = "Playerul Reclamat, Motivul Reclamatiei, Dovada";
+        } else if (fullHeader.includes('donații') || fullHeader.includes('donatii')) {
             categoryName = "Donații";
             const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
-            const hasAchizitie = contentLower.includes('achiziti') || contentLower.includes('dorest') || contentLower.includes('cumpar');
-            isModelValid = hasId && hasAchizitie;
-        } else if (embedDesc.includes('Raportare Bug')) {
+            const hasVarsta = contentLower.includes('varsta') || contentLower.includes('vârstă');
+            const hasAchizitie = contentLower.includes('doresti sa achizitionezi') || contentLower.includes('achizit');
+            isModelValid = hasId && hasVarsta && hasAchizitie;
+            if (!isModelValid) missingField = "Varsta, Ce doresti sa achizitionezi";
+        } else if (fullHeader.includes('raportare bug') || fullHeader.includes('bug')) {
             categoryName = "Raportare Bug";
             const hasId = contentLower.includes('id fivem') || contentLower.includes('id:');
-            const hasBug = contentLower.includes('bug') || contentLower.includes('problem');
-            isModelValid = hasId && hasBug;
-        } else {
-            isModelValid = message.content.trim().length >= 10;
+            const hasBug = contentLower.includes('problema/bug-ul') || contentLower.includes('bug');
+            const hasDeCand = contentLower.includes('de cand') || contentLower.includes('când');
+            isModelValid = hasId && hasBug && hasDeCand;
+            if (!isModelValid) missingField = "Problema/Bug-ul, De cand este problema";
         }
 
         if (!isModelValid) {
             await message.reply({
-                content: `⚠️ <@${message.author.id}>, modelul nu a fost completat corect!\n\n❌ Mesajul tău nu conține câmpurile obligatorii din model (Nume, ID FiveM, Motiv, Dovadă etc.).\n\nTe rugăm să copiezi modelul exact din primul mesaj de mai sus și să îl trimiți completat cu toate datele!`
+                content: `⚠️ <@${message.author.id}>, modelul nu a fost completat corect pentru **${categoryName}**!\n\n❌ Mesajul tău nu conține câmpurile specifice cerute: **${missingField || 'câmpurile din model'}**.\n\nTe rugăm să copiezi modelul exact din primul mesaj de mai sus și să îl trimiți completat cu toate datele!`
             }).catch(() => {});
         } else {
-            // Model is VALID! Tag @🔰 Staff Member now!
+            // Model is VALID! Tag @🔰 Staff Member ONCE!
             const staffRole = message.guild.roles.cache.find(r => r.name === '🔰 Staff Member') || 
                               message.guild.roles.cache.find(r => r.name.toLowerCase().includes('staff member')) || 
                               message.guild.roles.cache.find(r => r.name.toLowerCase() === 'staff member') || null;
